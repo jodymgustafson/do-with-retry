@@ -1,0 +1,10 @@
+*.ts
+!*.d.ts
+
+*.js.map
+*.tgz
+
+tsconfig.json
+spec
+examples
+.vscode
