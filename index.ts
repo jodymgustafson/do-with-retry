@@ -20,7 +20,7 @@ export type DoWithRetryOptions<T=any> = {
 
 let DFLT_OPTIONS = {
     maxAttempts: 10,
-    initTimeout: 1000,
+    initTimeout: 100,
     getNextTimeout: exponentialBackoff()
 } as DoWithRetryOptions;
 
@@ -43,7 +43,7 @@ class RetryError extends Error {
     }
 }
 
-type RetryFunction = (error?: unknown) => void;
+export type RetryFunction = (error?: unknown) => void;
 
 const retry: RetryFunction = (error?: unknown) => {
     throw new RetryError(ATTEMPT_FAILED_ERROR, error);
@@ -99,7 +99,7 @@ export async function doWithRetry<T>(fn: (retry: RetryFunction, attempt: number)
 }
 
 /**
- * Waits for a period of time asyncronously
+ * Waits for a period of time asynchronously
  * @example await sleep(100);
  * @param ms Number of milliseconds
  * @returns A promise to signal when done
@@ -142,15 +142,16 @@ export function exponentialBackoff(exponent = 2, maxTimeout = Number.MAX_SAFE_IN
 }
 
 /**
- * Timeout increases logarithmically approaching the max timeout
+ * Timeout increases using upward exponential decay approaching the max timeout
  * @param maxTimeout The maximum timeout in ms
- * @param backoffRate The logarithm amount, default is base 2
+ * @param rate The rate to increase, must be greater than 1, default is 2
  */
-export function logarithmicBackoff(maxTimeout: number, backoffRate = 2): BackoffFunction {
-    let factor = backoffRate;
-    return () => {
-        const timeout = maxTimeout - Math.floor(maxTimeout / factor);
-        factor *= backoffRate;
+ export function upwardDecayBackoff(maxTimeout: number, rate = 2): BackoffFunction {
+     if (rate <= 1) {
+         throw new Error("backoffRate must be greater than 1");
+     }
+    return (_, attempt: number) => {
+        const timeout = Math.round(maxTimeout * (1 - (1 / Math.pow(rate, attempt))));
         return timeout;
     }
 }

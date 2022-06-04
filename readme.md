@@ -1,13 +1,13 @@
 # DoWithRetry
 
-This is a simple to use function to help execute code and retry after a certain amount of time if it fails.
+This is an easy to use function to help execute code and retry after a certain amount of time if it fails.
 
-Sometimes you may want to execute some code and keep retrying if it fails. For example you may be calling a web service that could fail if you get a bad connection. This module will help you do that.
+In certain scenarios you may want to execute an operation and keep retrying if it fails. For example you may be calling a web service that could fail if you get a bad connection. In that case you'll want to retry, after a small delay, until either the call succeeds or fails enough times that you determine it's pointless to continue.
 
 ## Features
 
 - Promise based, works with async code
-- Failure is signaled by calling the retry() function that is passed into the user function
+- Failure is signaled by simply calling the retry() function that is passed into your user function
 - Comes with a set of built in backoff functions, or create your own
 - Built in TypeScript type definitions
 
@@ -17,10 +17,10 @@ Sometimes you may want to execute some code and keep retrying if it fails. For e
 
 ## Quick Example
 
-In the simplest example you call `doWithRetry` passing in a function to execute the code you want to try.
+In the simplest example you call `doWithRetry` passing in a function to execute your code.
 
 ```javascript
-const result = await doWithRetry((retry) => {
+const result = await doWithRetry(retry => {
     try {
         return doSomethingThatCouldThrow();
     }
@@ -36,14 +36,14 @@ const result = await doWithRetry((retry) => {
 
 Your function takes one parameter, which is a function to call when you want `doWithRetry` to try again after waiting a certain amount of time.
 
-When using the default options it will attempt to execute your function a maximum of 10 times and the first wait period will be 1000ms. The default backoff function is exponential so subsequent attempts will wait for 2000ms, 4000ms, 8000ms, etc.
+When using the default options it will attempt to execute your function a maximum of 10 times and the first retry wait period will be 100ms. The default backoff function is exponential so subsequent attempts will wait for 200ms, 400ms, 800ms, ..., 102400ms.
 
 ## The doWithRetry Function
 
-The function can take two arguments
+The function is asynchronous so you must use await when calling it. It can take two arguments:
 
-- A user function that contains the code to execute and retry
-- Set of options to control retry logic
+- A user function to execute and retry
+- A set of options to control retry logic (optional)
 
 ### The User Function
 
@@ -63,7 +63,7 @@ await doWithRetry((retry, attempt) => {
 }
 ```
 
-If you want to call it with an async function use the async keyword.
+You may also use an async function.
 
 ```javascript
 await doWithRetry(async (retry, attempt) => {
@@ -73,7 +73,7 @@ await doWithRetry(async (retry, attempt) => {
 
 ### The retry Function
 
-You can call `retry` with or without an error parameter. If you want to know what error happened in your `onFail` callback (see options below) you should pass it the error you catch.
+You can call `retry` with or without an error parameter. If you are using an `onFail` callback (see options below) and want to know what error happened you should pass it the error you catch.
 
 ### Options
 
@@ -90,8 +90,8 @@ const options = {
     maxAttempts: 3,
     initTimeout: 100,
     getNextTimeout: linearBackoff(100),
-    onFail: (error, attempt) => console.log("Attempt failed", attempt, error.message),
-    onSuccess: (result, attempt) => console.log("Result", result)
+    onFail: (error, attempt) => console.log("Attempt", attempt, "failed", error.message),
+    onSuccess: (result, attempt) => console.log("Completed after", attempt, "attempts")
 };
 
 const result = await doWithRetry(async (retry) => {
@@ -135,7 +135,7 @@ constantBackoff(500); // 500, 500, ...
 
 ### Linear
 
-The timeout increases linearly.
+The timeout increases linearly. y = mx + b
 
 `linearBackoff(increment: number, maxTimeout?: number)`
 
@@ -148,7 +148,7 @@ linearBackoff(500, 3000); // 1000, 1500, 2000, 2500, 3000, 3000, ...
 
 ### Exponential
 
-The timeout increases exponentially.
+The timeout increases exponentially. y = x^n + b
 
 `exponentialBackoff(exponent?: number, maxTimeout?: number)`
 
@@ -159,18 +159,22 @@ The timeout increases exponentially.
 exponentialBackoff(2, 10000); // 1000, 2000, 4000, 8000, 10000, 10000, ...
 ```
 
-### Logarithmic
+### Upward Decay
 
-The timeout increases logarithmically approaching a max timeout.
+The timeout increases using upward exponential decay approaching the max timeout. y = max * (1 - (1 / base ^ x))
 
-`logarithmicBackoff(maxTimeout: number, base?: number)`
+`upwardDecayBackoff(maxTimeout: number, base?: number)`
 
 - maxTimeout: The maximum timeout in ms
-- base: The logarithm base, default is 2
+- rate: The rate to increase, must be greater than 1, default is 2
+
+E.g. When the rate is 2, the timeout will increase half way from the current timeout to the max on every retry.
 
 ```
-logarithmicBackoff(1000, 2); // 500, 750, 875, 938, ..., 1000, 1000, ...
+upwardDecayBackoff(1000, 2); // 500, 750, 875, 938, ..., 1000, 1000, ...
 ```
+
+_Note: When using this the initial timeout defined in options is ignored._
 
 ### Fibonacci
 
@@ -185,7 +189,7 @@ The timeout increases using the fibonacci sequence.
 fibonacciBackoff(1000, 8000); // 1000, 2000, 3000, 5000, 8000, 8000, ...
 ```
 
-_Note: When using this the initial timeout defined in options not used._
+_Note: When using this the initial timeout defined in options is ignored._
 
 ### Random
 
@@ -200,7 +204,7 @@ The timeout is a random number between min and max.
 randomBackoff(1000, 5000);
 ```
 
-_Note: When using this the initial timeout defined in options not used._
+_Note: When using this the initial timeout defined in options is ignored._
 
 ### Build Your Own
 

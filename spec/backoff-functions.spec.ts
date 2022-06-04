@@ -3,7 +3,7 @@ import {
     exponentialBackoff,
     fibonacciBackoff,
     linearBackoff,
-    logarithmicBackoff,
+    upwardDecayBackoff,
     randomBackoff
 } from "..";
 
@@ -49,18 +49,18 @@ describe("When use exponential backoff", () => {
     });
 });
 
-describe("When use logarithmic backoff", () => {
-    it("should get base 2 logarithmic growth", () => {
-        const backoff = logarithmicBackoff(1000);
+describe("When use upward decay backoff", () => {
+    it("should get upward decay growth at rate of 2", () => {
+        const backoff = upwardDecayBackoff(1000);
         expect(backoff(0, 1)).withContext("first call").toBe(500);
         expect(backoff(500, 2)).withContext("second call").toBe(750);
         expect(backoff(750, 3)).withContext("third call").toBe(875);
         expect(backoff(875, 4)).withContext("fourth call").toBe(938);
         expect(backoff(938, 5)).withContext("fifth call").toBe(969);
-        expect(backoff(969, 6)).withContext("sixth call").toBe(985);
+        expect(backoff(969, 6)).withContext("sixth call").toBe(984);
     });
-    it("should get base 10 logarithmic growth", () => {
-        const backoff = logarithmicBackoff(1000, 10);
+    it("should get upward decay growth at rate of 10", () => {
+        const backoff = upwardDecayBackoff(1000, 10);
         expect(backoff(0, 1)).withContext("first call").toBe(900);
         expect(backoff(900, 2)).withContext("second call").toBe(990);
         expect(backoff(990, 3)).withContext("third call").toBe(999);

@@ -41,31 +41,6 @@ describe("When succeed after multiple attempts", () => {
     });
 });
 
-describe("When call async function and retry", () => {
-    let attempts = 0;
-    let failMsg = "";
-    it("should complete successfully", async () => {
-        const options: DoWithRetryOptions = {
-            onFail: (error) => { if (error) failMsg = error.message },
-        };
-        const result = await doWithRetry(async (retry, attempt) => {
-            attempts = attempt + 1;
-            return await errorTest(attempt).catch(retry);
-        }, options);
-
-        expect(result).toBe("completed");
-        expect(attempts).toBe(4);
-        expect(failMsg).toBe("Base Error");
-    });
-
-    async function errorTest(attempt: number): Promise<string> {
-        if (attempt !== 3) {
-            throw new Error("Base Error");
-        }
-        return "completed";
-    }
-});
-
 describe("When fail after multiple attempts", () => {
     it("should throw an error", async () => {
         let attempts = 0;
@@ -128,4 +103,29 @@ describe("When throws an uncaught error", () => {
 
         expect(attempts).toBe(1);
     });
+});
+
+describe("When call async function and retry", () => {
+    let attempts = 0;
+    let failMsg = "";
+    it("should complete successfully", async () => {
+        const options: DoWithRetryOptions = {
+            onFail: (error) => { if (error) failMsg = error.message },
+        };
+        const result = await doWithRetry(async (retry, attempt) => {
+            attempts = attempt + 1;
+            return await errorTest(attempt).catch(retry);
+        }, options);
+
+        expect(result).toBe("completed");
+        expect(attempts).toBe(4);
+        expect(failMsg).toBe("Base Error");
+    });
+
+    async function errorTest(attempt: number): Promise<string> {
+        if (attempt !== 3) {
+            throw new Error("Base Error");
+        }
+        return "completed";
+    }
 });
