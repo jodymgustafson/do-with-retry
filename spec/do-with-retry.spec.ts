@@ -1,6 +1,6 @@
 import {
-    ATTEMPT_COUNT_EXCEEDED_ERROR,
-    ATTEMPT_FAILED_ERROR, doWithRetry,
+    AttemptCountExceededError,
+    doWithRetry,
     DoWithRetryOptions, linearBackoff, overrideDefaultOptions
 } from "..";
 
@@ -48,14 +48,18 @@ describe("When fail after multiple attempts", () => {
             const options: DoWithRetryOptions = { maxAttempts: 5 };
             const result = await doWithRetry((retry, attempt) => {
                 attempts = attempt + 1;
-                retry();
+                retry(new Error("Failed on attempt " + attempt));
                 return "completed";
             }, options);
 
             throw new Error("Should have thrown an error");
         }
         catch (err) {
-            expect((err as Error).message).toBe(ATTEMPT_COUNT_EXCEEDED_ERROR);
+            expect(err).toBeInstanceOf(AttemptCountExceededError);
+            if (err instanceof AttemptCountExceededError) {
+                expect(err.message).toBe("Maximum attempt count exceeded");
+                expect((err.cause as Error).message).toBe("Failed on attempt 4");
+            }
         }
 
         expect(attempts).toBe(5);
@@ -68,7 +72,7 @@ describe("When fails then succeeds", () => {
         let failMsg = "";
         let success = "";
         const options: DoWithRetryOptions<string> = {
-            onFail: (error) => { if (error) failMsg = error.message },
+            onFail: (error) => { if (error) failMsg = (error as Error).message },
             onSuccess: result => success = result
         };
         const result = await doWithRetry((retry, attempt) => {
@@ -110,7 +114,7 @@ describe("When call async function and retry", () => {
     let failMsg = "";
     it("should complete successfully", async () => {
         const options: DoWithRetryOptions = {
-            onFail: (error) => { if (error) failMsg = error.message },
+            onFail: (error) => { if (error) failMsg = (error as Error).message },
         };
         const result = await doWithRetry(async (retry, attempt) => {
             attempts = attempt + 1;

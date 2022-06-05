@@ -29,8 +29,9 @@ const result = await doWithRetry(retry => {
         retry();
     }
 })
-.catch(err => {
+.catch(error => {
     console.error("All attempts to do something failed");
+    throw error.cause;
 });
 ```
 
@@ -45,6 +46,14 @@ The function is asynchronous so you must use await when calling it. It can take 
 - A user function to execute and retry
 - A set of options to control retry logic (optional)
 
+The function returns the value returned by the user function.
+
+### Error handling:
+
+- If an exception is not caught by the user function doWithRetry will terminate with that exception
+- If the user function fails more than the maximum number of retries it will throw an AttemptCountExceededError
+  - To get the last error that caused the user function to fail use error.cause
+
 ### The User Function
 
 The user function is passed two parameters.
@@ -53,7 +62,7 @@ The user function is passed two parameters.
 - The second parameter is the attempt number. The initial attempt will be 0, the first retry 1, etc.
 
 ```javascript
-await doWithRetry((retry, attempt) => {
+result = await doWithRetry((retry, attempt) => {
     try {
         return doSomething();
     }
@@ -67,7 +76,7 @@ You may also use an async function.
 
 ```javascript
 await doWithRetry(async (retry, attempt) => {
-    return await doSomethingAsync().catch(retry);
+    await doSomethingAsync().catch(retry);
 }
 ```
 
