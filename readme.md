@@ -27,7 +27,7 @@ const result = await doWithRetry(retry => {
     }
     catch (error) {
         // If at first you don't succeed, try again
-        retry();
+        retry(error);
     }
 })
 .catch(error => {
@@ -83,7 +83,7 @@ await doWithRetry(async (retry, attempt) => {
 
 ### The retry Function
 
-You can call `retry` with or without an error parameter. If you are using an `onFail` callback (see options below) and want to know what error happened you should pass it the error you catch.
+You can call `retry` with or without an error parameter. If you want to know what error caused the attempt to fail you should pass in the error you catch.
 
 ### Options
 
