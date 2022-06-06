@@ -1,13 +1,19 @@
 {
   "name": "do-with-retry",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A module for executing code with retry logic",
   "main": "index.js",
+  "repository": {
+      "url": "https://github.com/jodymgustafson/do-with-retry",
+      "type": "git"
+  },
   "scripts": {
     "test": "jasmine"
   },
   "keywords": [
-    "retry"
+    "do with retry",
+    "retry",
+    "backoff"
   ],
   "author": "JM Gustafson",
   "license": "MIT",
