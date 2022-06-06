@@ -5,10 +5,14 @@
  */
 export type BackoffFunction = (curTimeout: number, attempt: number) => number;
 
+/**
+ * Options available when calling doWithRetry
+ * @param T Return type of the user function
+ */
 export type DoWithRetryOptions<T=any> = {
     /** Max number of times to attempt calling the function, default is 10 */
     maxAttempts?: number;
-    /** Initial number of ms to wait until retry, default is 1000 */
+    /** Initial number of ms to wait until retry, default is 100 */
     initTimeout?: number;
     /** Function that gets the next time to wait in ms, default is exponential */
     getNextTimeout?: BackoffFunction; 
@@ -18,7 +22,7 @@ export type DoWithRetryOptions<T=any> = {
     onSuccess?: (result: T, attempt: number) => any;
 };
 
-let DFLT_OPTIONS = {
+const DFLT_OPTIONS = {
     maxAttempts: 10,
     initTimeout: 100,
     getNextTimeout: exponentialBackoff()
@@ -32,14 +36,20 @@ export function overrideDefaultOptions(options: DoWithRetryOptions): DoWithRetry
     return Object.assign(DFLT_OPTIONS, options);
 }
 
+/**
+ * The error thrown when all retries have been exhausted
+ */
 export class AttemptCountExceededError extends Error {
+    /**
+     * @param cause The error that caused the operation to fail, if any
+     */
     constructor(readonly cause?: unknown) {
         super("Maximum attempt count exceeded");
         this.name = this.constructor.name;
     }
 }
 
-/** An error used to signal retry */
+/** An error used internally to signal retry */
 class RetryError extends Error {
     constructor(readonly cause?: unknown) {
         super("ATTEMPTFAILED");
@@ -49,7 +59,7 @@ class RetryError extends Error {
 
 /**
  * Defines the shape of the retry function
- * @param cause The error that caused the retry (optional)
+ * @param cause The error that caused the retry, is any (optional)
  */
 export type RetryFunction = (cause?: unknown) => void;
 
@@ -159,7 +169,7 @@ export function exponentialBackoff(exponent = 2, maxTimeout = Number.MAX_SAFE_IN
  */
  export function upwardDecayBackoff(maxTimeout: number, rate = 2): BackoffFunction {
      if (rate <= 1) {
-         throw new RangeError("backoffRate must be greater than 1");
+         throw new RangeError("rate must be greater than 1");
      }
     return (_, attempt: number) => {
         const timeout = Math.round(maxTimeout * (1 - (1 / Math.pow(rate, attempt))));

@@ -10,6 +10,7 @@ In certain scenarios you may want to execute an operation and keep retrying if i
 - Failure is signaled by simply calling the retry() function that is passed into your user function
 - Comes with a set of built in backoff functions, or create your own
 - Built in TypeScript type definitions
+- No dependencies
 
 ## Install
 
