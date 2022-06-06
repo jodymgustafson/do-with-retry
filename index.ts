@@ -17,7 +17,7 @@ export type DoWithRetryOptions<T=any> = {
     /** Function that gets the next time to wait in ms, default is exponential */
     getNextTimeout?: BackoffFunction; 
     /** Function to be called when an attempt fails */
-    onFail?: (error: unknown | undefined, attempt: number) => any;
+    onFail?: (error: any | undefined, attempt: number) => any;
     /** Function to be called when the function succeeds */
     onSuccess?: (result: T, attempt: number) => any;
 };
@@ -43,7 +43,7 @@ export class AttemptCountExceededError extends Error {
     /**
      * @param cause The error that caused the operation to fail, if any
      */
-    constructor(readonly cause?: unknown) {
+    constructor(readonly cause?: any) {
         super("Maximum attempt count exceeded");
         this.name = this.constructor.name;
     }
@@ -51,7 +51,7 @@ export class AttemptCountExceededError extends Error {
 
 /** An error used internally to signal retry */
 class RetryError extends Error {
-    constructor(readonly cause?: unknown) {
+    constructor(readonly cause?: any) {
         super("ATTEMPTFAILED");
         this.name = this.constructor.name;
     }
@@ -61,13 +61,13 @@ class RetryError extends Error {
  * Defines the shape of the retry function
  * @param cause The error that caused the retry, is any (optional)
  */
-export type RetryFunction = (cause?: unknown) => void;
+export type RetryFunction<T> = (cause?: any) => T;
 
 /**
  * The function called to signal a retry
  * @param cause The error that caused the retry (optional)
  */
-const retry: RetryFunction = (cause?: unknown) => {
+function retry<T>(cause?: any): T {
     throw new RetryError(cause);
 }
 
@@ -78,7 +78,7 @@ const retry: RetryFunction = (cause?: unknown) => {
  * @returns The result of the function call
  * @throws AttemptCountExceededError if max attempts have been exceeded
  */
-export async function doWithRetry<T>(userFn: (retry: RetryFunction, attempt: number) => T, options?: DoWithRetryOptions<T>): Promise<T> {
+export async function doWithRetry<T>(userFn: (retry: RetryFunction<T>, attempt: number) => T, options?: DoWithRetryOptions<T>): Promise<T> {
     let timeout = options?.initTimeout ?? DFLT_OPTIONS.initTimeout!;
     const maxAttempts = options?.maxAttempts ?? DFLT_OPTIONS.maxAttempts!;
     const getNextTimeout = options?.getNextTimeout ?? DFLT_OPTIONS.getNextTimeout!;

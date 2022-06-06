@@ -32,7 +32,7 @@ const result = await doWithRetry(retry => {
 })
 .catch(error => {
     console.error("All attempts to do something failed");
-    throw error.cause;
+    throw error.cause; // throw error that caused the last failure
 });
 ```
 
@@ -78,7 +78,11 @@ You may also use an async function.
 ```javascript
 await doWithRetry(async (retry, attempt) => {
     await doSomethingAsync().catch(retry);
-}
+})
+.catch(err => {
+    console.log(err.message); // "Maximum attempt count exceeded"
+    throw err.cause;
+})
 ```
 
 ### The retry Function
@@ -107,7 +111,7 @@ const options = {
 const result = await doWithRetry(async (retry) => {
     await doSomething().catch(err => {
         if (err.code === 'ETIMEDOUT') {
-            retry();
+            retry(err);
         }
     });
 }, options);

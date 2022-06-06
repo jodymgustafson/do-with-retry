@@ -46,7 +46,7 @@ describe("When fail after multiple attempts", () => {
         let attempts = 0;
         try {
             const options: DoWithRetryOptions = { maxAttempts: 5 };
-            const result = await doWithRetry((retry, attempt) => {
+            await doWithRetry((retry, attempt) => {
                 attempts = attempt + 1;
                 retry(new Error("Failed on attempt " + attempt));
                 return "completed";
@@ -94,7 +94,7 @@ describe("When throws an uncaught error", () => {
     it("should rethrow the error", async () => {
         let attempts = 0;
         try {
-            const result = await doWithRetry((_retry, attempt) => {
+            await doWithRetry((_retry, attempt) => {
                 attempts = attempt + 1;
                 throw new Error("Test Error");
             });
@@ -116,7 +116,7 @@ describe("When call async function and retry", () => {
         const options: DoWithRetryOptions = {
             onFail: (error) => { if (error) failMsg = (error as Error).message },
         };
-        const result = await doWithRetry(async (retry, attempt) => {
+        const result = await doWithRetry<Promise<string>>(async (retry, attempt) => {
             attempts = attempt + 1;
             return await errorTest(attempt).catch(retry);
         }, options);

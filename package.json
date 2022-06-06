@@ -1,6 +1,6 @@
 {
   "name": "do-with-retry",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A module for executing code with retry logic",
   "main": "index.js",
   "repository": {
